@@ -30,10 +30,16 @@ def apple_on_snake(apple, snake):
 
 def random_apple(blue, red):
     r = random.randint(0, 1)
-    print(r)
     if r == 0:
         return blue
     return red
+
+
+def random_chance():
+    r = random.randint(0, 1)
+    if r == 0:
+        return True
+    return False
 
 # --- Globals ---
 # Colors
@@ -41,6 +47,7 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
 
 # Set the width and height of each snake segment
 segment_width = 15
@@ -97,6 +104,19 @@ class Apple(pygame.sprite.Sprite):
 
         # Make our top-left corner the passed-in location.
         self.rect = self.image.get_rect()
+
+
+class GreenApple(Apple):
+    def __init__(self):
+        super().__init__()
+
+        self.type = "green"
+        self.image.fill(GREEN)
+
+        self.rand_x = random.randint(1, 900)
+        self.rand_y = random.randint(1, 612)
+        self.rect.x = self.rand_x - (self.rand_x % 18)
+        self.rect.y = self.rand_y - (self.rand_y % 18)
 
 
 class RedApple(Apple):
@@ -174,6 +194,8 @@ while bad_apple:
     bad_apple = apple_on_snake(apple, snake_segments)
 allspriteslist.add(apple)
 
+green_apples = []
+
 # Border apples
 border_apples = []
 for x, y in border:
@@ -188,6 +210,11 @@ score = 0
 torus_walls = False
 border_apples_on = False
 
+# controls
+standard = {"left": pygame.K_LEFT, "right": pygame.K_RIGHT, "up": pygame.K_UP, "down": pygame.K_DOWN}
+alternate = {"left": pygame.K_RIGHT, "right": pygame.K_LEFT, "up": pygame.K_DOWN, "down": pygame.K_UP}
+controls = standard
+standard_controls = True
 
 while not done:
     reversing_snake = False
@@ -200,16 +227,16 @@ while not done:
         # We want the speed to be enough that we move a full
         # segment, plus the margin.
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
+            if event.key == controls["left"]:
                 x_change = (segment_width + segment_margin) * -1
                 y_change = 0
-            if event.key == pygame.K_RIGHT:
+            if event.key == controls["right"]:
                 x_change = (segment_width + segment_margin)
                 y_change = 0
-            if event.key == pygame.K_UP:
+            if event.key == controls["up"]:
                 x_change = 0
                 y_change = (segment_height + segment_margin) * -1
-            if event.key == pygame.K_DOWN:
+            if event.key == controls["down"]:
                 x_change = 0
                 y_change = (segment_height + segment_margin)
 
@@ -300,6 +327,35 @@ while not done:
             bad_apple = apple_on_snake(apple, snake_segments)
 
         allspriteslist.add(apple)
+
+        bad_green_apple = True
+        green_apple = None
+
+        while bad_green_apple:
+            if random_chance():
+                green_apple = GreenApple()
+                bad_green_apple = apple_on_snake(green_apple, snake_segments)
+            else:
+                bad_green_apple = False
+
+        if green_apple:
+            allspriteslist.add(green_apple)
+            green_apples.append(green_apple)
+
+    # If snake hits green apple
+    for ga in green_apples:
+        if (x, y) == (ga.rect.x, ga.rect.y):
+            green_apples.remove(ga)
+            allspriteslist.remove(ga)
+
+            if standard_controls:
+                controls = alternate
+                standard_controls = False
+            else:
+                controls = standard
+                standard_controls = True
+
+            speed = speed - 3
 
 
     # -- Draw everything
