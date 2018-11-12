@@ -182,6 +182,7 @@ for x, y in border:
 clock = pygame.time.Clock()
 done = False
 speed = 10
+score = 0
 
 # Gates
 torus_walls = False
@@ -264,7 +265,11 @@ while not done:
                 print("ATE border apple")
                 border_sprites.remove(ba)
                 border_apples.remove(ba)
-                speed = speed + 1
+                score = score + 1
+            if not border_apples:
+                score = score + 20
+                for x, y in border:
+                    border_apples.append(BorderApple(x, y))
 
     if not border_apples_on:
         border_sprites.empty()
@@ -276,7 +281,8 @@ while not done:
         if apple.type == "red":
             snake_segments.append(old_segment)
             allspriteslist.add(old_segment)
-            speed = speed + 1
+            speed = speed + 3
+            score = score + 3
 
         if apple.type == "blue":
             torus_walls = True
@@ -287,7 +293,7 @@ while not done:
         bad_apple = True
 
         while bad_apple:
-            if torus_walls:
+            if not torus_walls:
                 apple = random_apple(BlueApple(), RedApple())
             else:
                 apple = RedApple()
@@ -305,6 +311,8 @@ while not done:
 
     # Flip screen
     pygame.display.flip()
+
+    print(score)
 
     # Pause
     clock.tick(speed)
