@@ -41,6 +41,18 @@ def random_chance():
         return True
     return False
 
+
+def get_border_squares(board, snake):
+    border = []
+    for x in range(0, board["board_width"], snake["segment_width"] + snake["segment_margin"]):
+        border.append((x, board["y_min"]))
+        border.append((x, board["y_max"]))
+    for y in range(0, board["board_height"], board["segment_height"] + board["segment_margin"]):
+        border.append((board["x_min"], y))
+        border.append((board["x_max"], y))
+    return border
+
+
 # --- Globals ---
 # Colors
 BLACK = (0, 0, 0)
@@ -48,6 +60,33 @@ WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
+
+colors = {
+    "black": (0, 0, 0),
+    "white": (255, 255, 255),
+    "red": (255, 0, 0),
+    "blue": (0, 0, 255),
+    "green": (0, 255, 0)
+}
+
+snake = {
+    "segment_width": 15,
+    "segment_height": 15,
+    "segment_margin": 3,
+    "x_change": 0,
+    "y_change": 18
+}
+
+board = {
+    "board_width": 900,
+    "board_height": 612,
+    "x_max": 882,
+    "x_min": 0,
+    "y_max": 594,
+    "y_min": 0,
+}
+
+border = get_border_squares(board, snake)
 
 # Set the width and height of each snake segment
 segment_width = 15
