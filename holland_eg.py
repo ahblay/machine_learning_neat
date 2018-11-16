@@ -7,6 +7,7 @@ from pybrain3.rl.agents import LearningAgent
 from pybrain3.rl.learners import Q
 from pybrain3.rl.experiments import Experiment
 from pybrain3.rl.explorers import EpsilonGreedyExplorer
+from snake_reorg import Game
 
 
 class SnakeEnv(Environment):
@@ -22,6 +23,9 @@ class SnakeEnv(Environment):
         """ the currently visible state of the world (the    observation may be stochastic - repeated calls returning different values)
             :rtype: by default, this is assumed to be a numpy array of doubles
         """
+        game = Game()
+        game.run()
+        print("getting sensors")
         hand_value = int(input("Enter hand value: ")) - 1
         return [float(hand_value), ]
 
@@ -96,7 +100,7 @@ learner._setExplorer(EpsilonGreedyExplorer(0.0))
 agent = LearningAgent(av_table, learner)
 
 # define the environment
-env = BlackjackEnv()
+env = SnakeEnv()
 
 # define the task
 task = BlackjackTask(env)

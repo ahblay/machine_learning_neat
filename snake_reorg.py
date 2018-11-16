@@ -73,7 +73,7 @@ class Apple(pygame.sprite.Sprite):
         }
 
         # Set height, width
-        self.image = pygame.Surface([snake["segment_width"], snake["segment_height"]])
+        self.image = pygame.Surface([self.snake["segment_width"], self.snake["segment_height"]])
 
         # Make our top-left corner the passed-in location.
         self.rect = self.image.get_rect()
@@ -217,7 +217,6 @@ def assess(snake, apple, rel_look):
         orientations = ["left", "right", "up", "down"]
 
     if direction == orientations[0]:
-        print(direction)
         if head_y == min_y:
             return "wall ahead"
         for seg in snake:
@@ -226,8 +225,6 @@ def assess(snake, apple, rel_look):
         if apple_x == head_x and apple_y + pixel_width == head_y:
             return "apple ahead"
     if direction == orientations[1]:
-        print(direction)
-        print(head_y)
         if head_y == max_y:
             return "wall ahead"
         for seg in snake:
@@ -236,7 +233,6 @@ def assess(snake, apple, rel_look):
         if apple_x == head_x and apple_y - pixel_width == head_y:
             return "apple ahead"
     if direction == orientations[2]:
-        print(direction)
         if head_x == max_x:
             return "wall ahead"
         for seg in snake:
@@ -245,7 +241,6 @@ def assess(snake, apple, rel_look):
         if apple_y == head_y and apple_x - pixel_width == head_x:
             return "apple ahead"
     if direction == orientations[3]:
-        print(direction)
         if head_x == min_x:
             return "wall ahead"
         for seg in snake:
@@ -270,265 +265,268 @@ def get_state(snake, apple):
 
     return state
 
-if __name__ == "__main__":
 
-    # GLOBALS
-    colors = {
-        "black": (0, 0, 0),
-        "white": (255, 255, 255),
-        "red": (255, 0, 0),
-        "blue": (0, 0, 255),
-        "green": (0, 255, 0)
-    }
+class Game:
+    def __init__(self):
 
-    snake = {
-        "segment_width": 15,
-        "segment_height": 15,
-        "segment_margin": 3,
-        "x_change": 0,
-        "y_change": 18
-    }
+        # GLOBALS
+        self.colors = {
+            "black": (0, 0, 0),
+            "white": (255, 255, 255),
+            "red": (255, 0, 0),
+            "blue": (0, 0, 255),
+            "green": (0, 255, 0)
+        }
 
-    board = {
-        "board_width": 900,
-        "board_height": 612,
-        "x_max": 882,
-        "x_min": 0,
-        "y_max": 594,
-        "y_min": 0,
-    }
+        self.snake = {
+            "segment_width": 15,
+            "segment_height": 15,
+            "segment_margin": 3,
+            "x_change": 0,
+            "y_change": 18
+        }
 
-    game = {
-        "snake_segments": [],
-        "red_apples": [],
-        "green_apples": [],
-        "blue_apples": [],
-        "border_apples": []
-    }
+        self.board = {
+            "board_width": 900,
+            "board_height": 612,
+            "x_max": 882,
+            "x_min": 0,
+            "y_max": 594,
+            "y_min": 0,
+        }
 
-    info = {
-        "clock": pygame.time.Clock(),
-        "done": False,
-        "speed": 10,
-        "score": 0,
-    }
+        self.game = {
+            "snake_segments": [],
+            "red_apples": [],
+            "green_apples": [],
+            "blue_apples": [],
+            "border_apples": []
+        }
 
-    gates = {
-        "torus_walls": False,
-        "border_apples_on": False,
-        "reversing_snake": False,
-        "standard_controls": True
-    }
+        self.info = {
+            "clock": pygame.time.Clock(),
+            "done": False,
+            "speed": 10,
+            "score": 0,
+        }
 
-    border = get_border_squares(board, snake)
+        self.gates = {
+            "torus_walls": False,
+            "border_apples_on": False,
+            "reversing_snake": False,
+            "standard_controls": True
+        }
+
+        self.border = get_border_squares(self.board, self.snake)
+
+        # Create an 800x600 sized screen
+        self.screen = pygame.display.set_mode([self.board["board_width"], self.board["board_height"]])
+
+        # Set the title of the window
+        pygame.display.set_caption('Snake')
+
+        self.border_sprites = pygame.sprite.Group()
+        self.snake_sprites = pygame.sprite.Group()
+        self.red_apple_sprites = pygame.sprite.Group()
+
+        # controls
+        self.standard = {"left": pygame.K_LEFT, "right": pygame.K_RIGHT, "up": pygame.K_UP, "down": pygame.K_DOWN}
+        self.alternate = {"left": pygame.K_RIGHT, "right": pygame.K_LEFT, "up": pygame.K_DOWN, "down": pygame.K_UP}
+        self.controls = self.standard
 
     # Call this function so the Pygame library can initialize itself
     pygame.init()
 
-    # Create an 800x600 sized screen
-    screen = pygame.display.set_mode([board["board_width"], board["board_height"]])
+    def run(self):
+        # Create an initial snake
+        self.game["snake_segments"] = initialize_snake(15, self.snake)
+        for seg in self.game["snake_segments"]:
+            self.snake_sprites.add(seg)
 
-    # Set the title of the window
-    pygame.display.set_caption('Snake')
+        # Create initial apple
+        self.game["red_apples"].append(spawn_apple(self.game, "red"))
+        for ra in self.game["red_apples"]:
+            self.red_apple_sprites.add(ra)
 
-    border_sprites = pygame.sprite.Group()
-    snake_sprites = pygame.sprite.Group()
-    red_apple_sprites = pygame.sprite.Group()
+        # Border apples
+            self.game["border_apples"] = initialize_border_apples(self.border)
 
-    # Create an initial snake
-    game["snake_segments"] = initialize_snake(15, snake)
-    for seg in game["snake_segments"]:
-        snake_sprites.add(seg)
+        while not self.info["done"]:
 
-    # Create initial apple
-    game["red_apples"].append(spawn_apple(game, "red"))
-    for ra in game["red_apples"]:
-        red_apple_sprites.add(ra)
+            state = get_state(self.game["snake_segments"], self.game["red_apples"])
+            print(state)
 
-    # Border apples
-    game["border_apples"] = initialize_border_apples(border)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.info["done"] = True
 
-    # controls
-    standard = {"left": pygame.K_LEFT, "right": pygame.K_RIGHT, "up": pygame.K_UP, "down": pygame.K_DOWN}
-    alternate = {"left": pygame.K_RIGHT, "right": pygame.K_LEFT, "up": pygame.K_DOWN, "down": pygame.K_UP}
-    controls = standard
+                # Set the speed based on the key pressed
+                # We want the speed to be enough that we move a full
+                # segment, plus the margin.
+                if event.type == pygame.KEYDOWN:
+                    if event.key == self.controls["left"]:
+                        self.snake["x_change"] = (self.snake["segment_width"] + self.snake["segment_margin"]) * -1
+                        self.snake["y_change"] = 0
+                    if event.key == self.controls["right"]:
+                        self.snake["x_change"] = (self.snake["segment_width"] + self.snake["segment_margin"])
+                        self.snake["y_change"] = 0
+                    if event.key == self.controls["up"]:
+                        self.snake["x_change"] = 0
+                        self.snake["y_change"] = (self.snake["segment_height"] + self.snake["segment_margin"]) * -1
+                    if event.key == self.controls["down"]:
+                        self.snake["x_change"] = 0
+                        self.snake["y_change"] = (self.snake["segment_height"] + self.snake["segment_margin"])
 
-    while not info["done"]:
+            # Get rid of last segment of the snake
+            # .pop() command removes last item in list
+            old_segment = self.game["snake_segments"].pop()
+            self.snake_sprites.remove(old_segment)
 
-        state = get_state(game["snake_segments"], game["red_apples"])
-        print(state)
+            # Figure out where new segment will be
+            x = self.game["snake_segments"][0].rect.x + self.snake["x_change"]
+            y = self.game["snake_segments"][0].rect.y + self.snake["y_change"]
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                info["done"] = True
+            # Can reverse into self
+            if (x, y) == (self.game["snake_segments"][1].rect.x, self.game["snake_segments"][1].rect.y):
+                x = x - 2 * self.snake["x_change"]
+                y = y - 2 * self.snake["y_change"]
 
-            # Set the speed based on the key pressed
-            # We want the speed to be enough that we move a full
-            # segment, plus the margin.
-            if event.type == pygame.KEYDOWN:
-                if event.key == controls["left"]:
-                    snake["x_change"] = (snake["segment_width"] + snake["segment_margin"]) * -1
-                    snake["y_change"] = 0
-                if event.key == controls["right"]:
-                    snake["x_change"] = (snake["segment_width"] + snake["segment_margin"])
-                    snake["y_change"] = 0
-                if event.key == controls["up"]:
-                    snake["x_change"] = 0
-                    snake["y_change"] = (snake["segment_height"] + snake["segment_margin"]) * -1
-                if event.key == controls["down"]:
-                    snake["x_change"] = 0
-                    snake["y_change"] = (snake["segment_height"] + snake["segment_margin"])
+            # Hitting the wall
+            if not self.gates["torus_walls"]:
+                if x > self.board["x_max"] or x < self.board["x_min"] or y > self.board["y_max"] or y < self.board["y_min"]:
+                    self.info["done"] = True
 
-        # Get rid of last segment of the snake
-        # .pop() command removes last item in list
-        old_segment = game["snake_segments"].pop()
-        snake_sprites.remove(old_segment)
+            if self.gates["torus_walls"]:
+                if x > self.board["x_max"]:
+                    x = self.board["x_min"]
+                if x < self.board["x_min"]:
+                    x = self.board["x_max"]
+                if y > self.board["y_max"]:
+                    y = self.board["y_min"]
+                if y < self.board["y_min"]:
+                    y = self.board["y_max"]
 
-        # Figure out where new segment will be
-        x = game["snake_segments"][0].rect.x + snake["x_change"]
-        y = game["snake_segments"][0].rect.y + snake["y_change"]
+            # No snake collisions
+            for seg in self.game["snake_segments"]:
+                if (seg.rect.x, seg.rect.y) == (x, y):
+                    self.info["done"] = True
 
-        # Can reverse into self
-        if (x, y) == (game["snake_segments"][1].rect.x, game["snake_segments"][1].rect.y):
-            x = x - 2 * snake["x_change"]
-            y = y - 2 * snake["y_change"]
+            segment = Segment(x, y)
 
-        # Hitting the wall
-        if not gates["torus_walls"]:
-            if x > board["x_max"] or x < board["x_min"] or y > board["y_max"] or y < board["y_min"]:
-                info["done"] = True
+            # Insert new segment into the list
+            if not self.gates["reversing_snake"]:
+                self.game["snake_segments"].insert(0, segment)
+                self.snake_sprites.add(segment)
 
-        if gates["torus_walls"]:
-            if x > board["x_max"]:
-                x = board["x_min"]
-            if x < board["x_min"]:
-                x = board["x_max"]
-            if y > board["y_max"]:
-                y = board["y_min"]
-            if y < board["y_min"]:
-                y = board["y_max"]
+            # Add border apples
+            if self.gates["border_apples_on"]:
+                t2 = Timer(3, blue_powerup_timer2)
+                for ba in self.game["border_apples"]:
+                    self.border_sprites.add(ba)
+                t2.start()
+                for ba in self.game["border_apples"]:
+                    if (x, y) == (ba.rect.x, ba.rect.y):
+                        self.border_sprites.remove(ba)
+                        self.game["border_apples"].remove(ba)
+                        self.info["score"] += 1
+                    if not self.game["border_apples"]:
+                        self.info["score"] += 20
+                        self.game["border_apples"] = initialize_border_apples(border)
 
-        # No snake collisions
-        for seg in game["snake_segments"]:
-            if (seg.rect.x, seg.rect.y) == (x, y):
-                info["done"] = True
+            if not self.gates["border_apples_on"]:
+                self.border_sprites.empty()
 
-        segment = Segment(x, y)
+            # If snake hits red apple logic
+            for ra in self.game["red_apples"]:
+                if (x, y) == (ra.rect.x, ra.rect.y):
+                    self.red_apple_sprites.remove(ra)
 
-        # Insert new segment into the list
-        if not gates["reversing_snake"]:
-            game["snake_segments"].insert(0, segment)
-            snake_sprites.add(segment)
+                    self.game["snake_segments"].append(old_segment)
+                    self.snake_sprites.add(old_segment)
+                    self.info["speed"] += 3
+                    self.info["score"] += 3
 
-        # Add border apples
-        if gates["border_apples_on"]:
-            t2 = Timer(3, blue_powerup_timer2)
-            for ba in game["border_apples"]:
-                border_sprites.add(ba)
-            t2.start()
-            for ba in game["border_apples"]:
+                    if not self.gates["torus_walls"]:
+                        #apple_type = random_apple("blue", "red")
+                        #new_apple = spawn_apple(game, apple_type)
+                        new_apple = spawn_apple(self.game, "red")
+                    else:
+                        new_apple = spawn_apple(self.game, "red")
+
+                    if new_apple.type == "red":
+                        self.game["red_apples"].append(new_apple)
+                    if new_apple.type == "blue":
+                        self.game["blue_apples"].append(new_apple)
+
+                    self.game["red_apples"].remove(ra)
+                    self.red_apple_sprites.add(new_apple)
+
+            '''
+                    # Randomly spawn green apple
+                    if random_chance():
+                        ga = spawn_apple(game, "green")
+                        allspriteslist.add(ga)
+                        game["green_apples"].append(ga)
+    
+            # If snake hits blue apple logic
+            for ba in game["blue_apples"]:
                 if (x, y) == (ba.rect.x, ba.rect.y):
-                    border_sprites.remove(ba)
-                    game["border_apples"].remove(ba)
-                    info["score"] += 1
-                if not game["border_apples"]:
-                    info["score"] += 20
-                    game["border_apples"] = initialize_border_apples(border)
+                    allspriteslist.remove(ba)
+    
+                    gates["torus_walls"] = True
+                    t1 = Timer(7, blue_powerup_timer1)
+                    t1.start()
+    
+                    if not gates["torus_walls"]:
+                        apple_type = random_apple("blue", "red")
+                        new_apple = spawn_apple(game, apple_type)
+                    else:
+                        new_apple = spawn_apple(game, "red")
+    
+                    if new_apple.type == "red":
+                        game["red_apples"].append(new_apple)
+                    if new_apple.type == "blue":
+                        game["blue_apples"].append(new_apple)
+    
+                    game["blue_apples"].remove(ba)
+                    allspriteslist.add(new_apple)
+    
+                    # Randomly spawn green apple
+                    if random_chance():
+                        ga = spawn_apple(game, "green")
+                        allspriteslist.add(ga)
+                        game["green_apples"].append(ga)
+    
+            # If snake hits green apple
+            for ga in game["green_apples"]:
+                if (x, y) == (ga.rect.x, ga.rect.y):
+                    game["green_apples"].remove(ga)
+                    allspriteslist.remove(ga)
+    
+                    if gates["standard_controls"]:
+                        controls = alternate
+                        standard_controls = False
+                    else:
+                        controls = standard
+                        standard_controls = True
+    
+                    info["speed"] -= 3
+            '''
 
-        if not gates["border_apples_on"]:
-            border_sprites.empty()
+            # -- Draw everything
+            # Clear screen
+            self.screen.fill(self.colors["black"])
 
-        # If snake hits red apple logic
-        for ra in game["red_apples"]:
-            if (x, y) == (ra.rect.x, ra.rect.y):
-                red_apple_sprites.remove(ra)
+            self.border_sprites.draw(self.screen)
+            self.snake_sprites.draw(self.screen)
+            self.red_apple_sprites.draw(self.screen)
 
-                game["snake_segments"].append(old_segment)
-                snake_sprites.add(old_segment)
-                info["speed"] += 3
-                info["score"] += 3
+            # Flip screen
+            pygame.display.flip()
 
-                if not gates["torus_walls"]:
-                    #apple_type = random_apple("blue", "red")
-                    #new_apple = spawn_apple(game, apple_type)
-                    new_apple = spawn_apple(game, "red")
-                else:
-                    new_apple = spawn_apple(game, "red")
+            #print(info["score"])
 
-                if new_apple.type == "red":
-                    game["red_apples"].append(new_apple)
-                if new_apple.type == "blue":
-                    game["blue_apples"].append(new_apple)
+            # Pause
+            self.info["clock"].tick(self.info["speed"])
 
-                game["red_apples"].remove(ra)
-                red_apple_sprites.add(new_apple)
-
-        '''
-                # Randomly spawn green apple
-                if random_chance():
-                    ga = spawn_apple(game, "green")
-                    allspriteslist.add(ga)
-                    game["green_apples"].append(ga)
-
-        # If snake hits blue apple logic
-        for ba in game["blue_apples"]:
-            if (x, y) == (ba.rect.x, ba.rect.y):
-                allspriteslist.remove(ba)
-
-                gates["torus_walls"] = True
-                t1 = Timer(7, blue_powerup_timer1)
-                t1.start()
-
-                if not gates["torus_walls"]:
-                    apple_type = random_apple("blue", "red")
-                    new_apple = spawn_apple(game, apple_type)
-                else:
-                    new_apple = spawn_apple(game, "red")
-
-                if new_apple.type == "red":
-                    game["red_apples"].append(new_apple)
-                if new_apple.type == "blue":
-                    game["blue_apples"].append(new_apple)
-
-                game["blue_apples"].remove(ba)
-                allspriteslist.add(new_apple)
-
-                # Randomly spawn green apple
-                if random_chance():
-                    ga = spawn_apple(game, "green")
-                    allspriteslist.add(ga)
-                    game["green_apples"].append(ga)
-
-        # If snake hits green apple
-        for ga in game["green_apples"]:
-            if (x, y) == (ga.rect.x, ga.rect.y):
-                game["green_apples"].remove(ga)
-                allspriteslist.remove(ga)
-
-                if gates["standard_controls"]:
-                    controls = alternate
-                    standard_controls = False
-                else:
-                    controls = standard
-                    standard_controls = True
-
-                info["speed"] -= 3
-        '''
-
-        # -- Draw everything
-        # Clear screen
-        screen.fill(colors["black"])
-
-        border_sprites.draw(screen)
-        snake_sprites.draw(screen)
-        red_apple_sprites.draw(screen)
-
-        # Flip screen
-        pygame.display.flip()
-
-        #print(info["score"])
-
-        # Pause
-        info["clock"].tick(info["speed"])
-
-    pygame.quit()
+        pygame.quit()
